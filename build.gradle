@@ -1,0 +1,111 @@
+configurations {
+    jaxb
+}
+
+buildscript {
+	ext {
+		springBootVersion = '1.5.7.RELEASE'
+        springGradleVersion = '1.0.3.RELEASE'
+	}
+	repositories {
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath("io.spring.gradle:dependency-management-plugin:${springGradleVersion}")
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.checkmarx'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = 1.8
+
+repositories {
+	mavenCentral()
+}
+
+eclipse {
+    classpath {
+        file.beforeMerged { cp ->
+            cp.entries.add( new org.gradle.plugins.ide.eclipse.model.SourceFolder('build/generated-sources/jaxb', null) )
+        }
+        downloadSources=true
+        downloadJavadoc=true
+    }
+}
+
+// tag::wsdl[]
+task genJaxb {
+    ext.sourcesDir = "${buildDir}/generated-sources/jaxb"
+    ext.classesDir = "${buildDir}/classes/jaxb"
+    ext.schema = "http://cxlocal/CxWebInterface/CxWSResolver.asmx?WSDL"
+    ext.schema1 = "http://cxlocal/CxWebInterface/Portal/CxWebService.asmx?WSDL"
+
+    outputs.dir classesDir
+
+    doLast() {
+        project.ant {
+            taskdef name: "xjc", classname: "com.sun.tools.xjc.XJCTask",
+                    classpath: configurations.jaxb.asPath
+            mkdir(dir: sourcesDir)
+            mkdir(dir: classesDir)
+
+            xjc(destdir: sourcesDir, schema: schema,
+                    package: "com.checkmarx.api.cxresolver") {
+                arg(value: "-wsdl")
+                produces(dir: sourcesDir, includes: "**/*.java")
+            }
+            xjc(destdir: sourcesDir, schema: schema1,
+                    package: "com.checkmarx.api.cxportal") {
+                arg(value: "-wsdl")
+                produces(dir: sourcesDir, includes: "**/*.java")
+            }
+
+            javac(destdir: classesDir, source: 1.8, target: 1.8, debug: true,
+                    debugLevel: "lines,vars,source",
+                    classpath: configurations.jaxb.asPath) {
+                src(path: sourcesDir)
+                include(name: "**/*.java")
+                include(name: "*.java")
+            }
+
+            copy(todir: classesDir) {
+                fileset(dir: sourcesDir, erroronmissingdir: false) {
+                    exclude(name: "**/*.java")
+                }
+            }
+        }
+    }
+}
+// end::wsdl[]
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+	compile(
+    	'org.springframework.boot:spring-boot-starter',
+    	'org.springframework.ws:spring-ws-core',
+        'com.google.guava:guava:22.0'
+    )
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+
+    jaxb "com.sun.xml.bind:jaxb-xjc:2.1.7"
+}
+
+jar {
+    baseName = 'cx-soap'
+    version =  '0.1.0'
+
+    from genJaxb.classesDir
+}
+
+task afterEclipseImport {
+    dependsOn genJaxb
+}
+
