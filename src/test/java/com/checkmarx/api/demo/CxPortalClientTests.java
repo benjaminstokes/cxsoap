@@ -3,9 +3,9 @@ package com.checkmarx.api.demo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.Assert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
 
 import java.util.List;
 
@@ -15,12 +15,9 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import com.checkmarx.api.cxportal.ArrayOfCxWSItemAndCRUD;
 import com.checkmarx.api.cxportal.ArrayOfGroup;
@@ -32,11 +29,11 @@ import com.checkmarx.api.cxportal.GroupType;
 import com.checkmarx.api.cxportal.TeamData;
 import com.checkmarx.api.cxportal.UserData;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
-public class CxPortalClientTests {
+public class CxPortalClientTests extends SpringUnitTest {
 	
 	private static final Logger log = LoggerFactory.getLogger(CxPortalClientTests.class);
+	
+	public static final String HOST = "http://cxlocal";
 	
 	@Autowired
 	private CxPortalClient portal;
@@ -46,12 +43,23 @@ public class CxPortalClientTests {
 	public void setup() {
 		assertThat(portal, is(notNullValue()));
 
-		sessionId = portal.login("admin@cx", "Im@hom3y!!");
+		sessionId = portal.login(HOST, "admin@cx", "Im@hom3y!!");
 		log.debug("login: session={}", sessionId);
 		assertThat(sessionId, is(notNullValue()));
 		assertThat(sessionId, not(isEmptyString()));
 	}
 
+	@Test
+	public void testGetQueryDesc() {
+		log.trace("testGetQueryDesc()");
+
+		final String desc = portal.getQueryDescription(sessionId, 138);
+		assertThat(desc, is(notNullValue()));
+		assertThat(desc, not(isEmptyString()));
+		
+		log.debug("\n{}", desc);
+	}
+	
 	@Test
 	public void testGetAllTeams() {
 		log.trace("testGetAllTeams()");
@@ -79,12 +87,18 @@ public class CxPortalClientTests {
 		assertThat(users, is(notNullValue()));
 		assertThat(users.size(), is(greaterThan(0)));
 		users.forEach((user) -> {
-			CxWSRoleWithUserPrivileges role = (CxWSRoleWithUserPrivileges) user.getRoleData();
-			log.debug("user: id={}; userName={}; role={}",
-					user.getID(),
-					user.getUserName(),
-					role.getName());
+			log.debug("{}", CxPortalUtils.printUserData(user, true));
 		});
+	}
+	
+	@Test
+	public void testGetUserById() {
+		log.trace("testGetUserById()");
+		
+		final long userId = 2;
+		final UserData user = portal.getUserById(sessionId, userId);
+		assertThat(user, is(notNullValue()));
+		log.debug("{}", CxPortalUtils.printUserData(user, true));
 	}
 	
 	@Test
@@ -124,9 +138,11 @@ public class CxPortalClientTests {
 		userData.setAuditUser(false);
 		final ArrayOfGroup groupList = new ArrayOfGroup();
 		final Group group = new Group();
-		group.setGroupName("Users");
+		//group.setGroupName("Users");
+		//group.setGuid("22222222-2222-448d-b029-989c9070eb23");
+		group.setGroupName("Sub-Team1");
+		group.setGuid("6d78e6bd-0f7f-4061-acdd-80fece33801f");
 		group.setType(GroupType.TEAM);
-		group.setGuid("22222222-2222-448d-b029-989c9070eb23");
 		groupList.getGroup().add(group);
 		userData.setGroupList(groupList);
 		userData.setLastLoginDate(date);

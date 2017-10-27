@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <include resource="org/springframework/boot/logging/logback/base.xml" />
+
+	<!-- Spring Web service Soap messages -->
+    <logger name="org.springframework" level="warn" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+    <!-- set the following level to trace to capture SOAP request/responses to the log -->
+	<logger name="org.springframework.ws.client.MessageTracing"	level="info" additivity="false">
+        <appender-ref ref="FILE" />
+    </logger>
+	<logger name="com.checkmarx" level="debug" additivity="false">
+        <appender-ref ref="FILE" />
+	</logger>
+
+</configuration>

@@ -22,8 +22,9 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
 group = 'com.checkmarx'
-version = '0.0.1-SNAPSHOT'
+version = '0.1.0-SNAPSHOT'
 sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 repositories {
 	mavenCentral()
@@ -84,9 +85,6 @@ task genJaxb {
 }
 // end::wsdl[]
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
 dependencies {
 	compile(
     	'org.springframework.boot:spring-boot-starter',
@@ -98,9 +96,33 @@ dependencies {
     jaxb "com.sun.xml.bind:jaxb-xjc:2.1.7"
 }
 
+sourceSets {
+    generated{
+        java.srcDir "${buildDir}/generated-sources/jaxb"
+    }
+
+    main {
+        compileClasspath += generated.output
+        runtimeClasspath += generated.output
+    }
+
+    test {
+        compileClasspath += generated.output
+        runtimeClasspath += generated.output
+    }
+}
+
+compileGeneratedJava.dependsOn(genJaxb)
+compileJava.dependsOn(compileGeneratedJava)
+compileJava.source sourceSets.generated.java, sourceSets.main.java
+
 jar {
-    baseName = 'cx-soap'
-    version =  '0.1.0'
+    baseName = 'cxsoap'
+
+    manifest {
+        attributes 'Implementation-Title': 'Checkmarx CxSoap',
+                   'Implementation-Version': version
+    }
 
     from genJaxb.classesDir
 }
@@ -109,3 +131,9 @@ task afterEclipseImport {
     dependsOn genJaxb
 }
 
+task zip(type: Zip) {
+    dependsOn bootRepackage
+    from 'dist'
+    from jar
+    into 'cxsoap'
+}

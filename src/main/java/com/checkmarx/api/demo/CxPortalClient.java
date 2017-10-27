@@ -19,6 +19,10 @@ import com.checkmarx.api.cxportal.GetAllTeams;
 import com.checkmarx.api.cxportal.GetAllTeamsResponse;
 import com.checkmarx.api.cxportal.GetAllUsers;
 import com.checkmarx.api.cxportal.GetAllUsersResponse;
+import com.checkmarx.api.cxportal.GetQueryDescription;
+import com.checkmarx.api.cxportal.GetQueryDescriptionResponse;
+import com.checkmarx.api.cxportal.GetUserById;
+import com.checkmarx.api.cxportal.GetUserByIdResponse;
 import com.checkmarx.api.cxportal.Login;
 import com.checkmarx.api.cxportal.LoginResponse;
 import com.checkmarx.api.cxportal.ObjectFactory;
@@ -30,6 +34,8 @@ public class CxPortalClient extends WebServiceGatewaySupport {
 	
 	private static final Logger log = LoggerFactory.getLogger(CxPortalClient.class);
 	
+	private static final String PORTAL_URI = "/CxWebInterface/Portal/CxWebService.asmx";
+
 	private final ObjectFactory objectFactory = new ObjectFactory();
 	
 	@FunctionalInterface
@@ -37,9 +43,11 @@ public class CxPortalClient extends WebServiceGatewaySupport {
 		public CxWSBasicRepsonse getBasicResponse(T response);
 	}
 
-	public String login(String user, String password) {
-		log.trace("login() : user={}", user);
-		
+	public String login(String host, String user, String password) {
+		log.trace("login() : host={}, user={}", host, user);
+
+ 		this.setDefaultUri(host + PORTAL_URI);
+ 		
 		final String ACTION = "http://Checkmarx.com/Login";
 		
 		final Credentials credentials = objectFactory.createCredentials();
@@ -80,6 +88,20 @@ public class CxPortalClient extends WebServiceGatewaySupport {
 		return response.getGetAllUsersResult().getUserDataList().getUserData();
 	}
 	
+	public UserData getUserById(String sessionId, long id) {
+		log.trace("getUserById(): id={}", id);
+		
+		final String ACTION = "http://Checkmarx.com/GetUserById";
+		
+		final GetUserById request = objectFactory.createGetUserById();
+		request.setSessionID(sessionId);
+		request.setUserId(id);
+		
+		final GetUserByIdResponse response = send(request, GetUserByIdResponse.class, ACTION,
+				(r) -> r.getGetUserByIdResult());
+		return response.getGetUserByIdResult().getUserData();
+	}
+	
 	public long addUser(String sessionId, UserData userData, CxUserTypes userType) {
 		log.trace("addUser(): userName={}; userType={}", userData.getUserName(), userType);
 		
@@ -116,6 +138,19 @@ public class CxPortalClient extends WebServiceGatewaySupport {
 			if (user.getUserName().equals(userName)) return user.getID();
 		}
 		return 0;
+	}
+	
+	public String getQueryDescription(String sessionId, int cweId) {
+		log.trace("getQueryDescription() : cweId={}", cweId);
+		
+		final String ACTION = "http://Checkmarx.com/GetQueryDescription";
+
+		final GetQueryDescription request = objectFactory.createGetQueryDescription();
+		request.setSessionId(sessionId);
+		request.setCweID(cweId);
+		
+		final GetQueryDescriptionResponse response = send(request, GetQueryDescriptionResponse.class, ACTION,  (r) -> r.getGetQueryDescriptionResult());
+		return response.getGetQueryDescriptionResult().getQueryDescription();
 	}
 
 	private <T,R> T send(R request, Class<T> clazz, String soapAction, BasicResponse<T> responseParser) {

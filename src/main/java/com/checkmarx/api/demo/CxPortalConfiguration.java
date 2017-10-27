@@ -20,7 +20,7 @@ public class CxPortalConfiguration {
 	@Bean
 	public CxPortalClient cxPortalClient(Jaxb2Marshaller marshaller) {
 		final CxPortalClient client = new CxPortalClient();
-		client.setDefaultUri("http://cxlocal/CxWebInterface/Portal/CxWebService.asmx");
+		//client.setDefaultUri("http://cxlocal/CxWebInterface/Portal/CxWebService.asmx");
 		client.setMarshaller(marshaller);
 		client.setUnmarshaller(marshaller);
 		return client;

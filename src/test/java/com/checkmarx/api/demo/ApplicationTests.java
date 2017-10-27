@@ -1,13 +1,8 @@
 package com.checkmarx.api.demo;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest
-public class ApplicationTests {
+public class ApplicationTests extends SpringUnitTest {
 
 	@Test
 	public void contextLoads() {
